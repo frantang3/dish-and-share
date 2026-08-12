@@ -6,6 +6,8 @@ Everyone drops in a link to a recipe they love, adds a note on how they actually
 
 It runs as a Google Apps Script **web app**, with a Google Sheet as the only "database." No accounts, no signup — anyone with the link can browse and add a recipe.
 
+![Dish & Share screenshot](docs/screenshot.png)
+
 ## What it looks like
 
 A card feed: emoji icon (auto-picked from the recipe name — tacos get 🌮, pancakes get 🥞), category tag, contributor name, description, their notes in an italic callout, dietary/occasion tag chips, and a heart-react + share row at the bottom. Filterable by category, dietary need, and occasion; sortable by newest, most loved, A–Z, or by contributor.
