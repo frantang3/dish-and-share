@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dish & Share</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: #f5f5f3; font-family: 'DM Sans', sans-serif; color: #1a1a1a; font-size: 22px; }
+#app { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.page { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── HEADER ─────────────────────────────────── */
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 16px 18px 14px;
+  flex-shrink: 0;
+}
+.header-row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -.01em;
+}
+.logo em { font-style: italic; font-weight: 400; color: #bbb; }
+.search-wrap { flex: 1; position: relative; }
+.search-icon {
+  position: absolute; left: 14px; top: 50%;
+  transform: translateY(-50%); pointer-events: none; color: #bbb;
+}
+.search-input {
+  width: 100%;
+  padding: 13px 14px 13px 44px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f5f5f3;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.search-input:focus { border-color: #1a1a1a; background: #fff; }
+.search-input::placeholder { color: #bbb; }
+.add-btn {
+  background: #1a1a1a; color: #fff;
+  border: none; border-radius: 14px;
+  padding: 13px 20px;
+  font-family: inherit; font-size: 1rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+
+/* Filter row */
+.filter-row { display: flex; align-items: center; gap: 8px; }
+.filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 16px;
+  border: 1.5px solid #e8e8e8; border-radius: 12px;
+  background: #fff; font-family: inherit; font-size: .95rem;
+  font-weight: 500; cursor: pointer; color: #666;
+  position: relative; flex-shrink: 0;
+}
+.filter-btn.active { border-color: #1a1a1a; color: #1a1a1a; }
+.filter-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: #1a1a1a; color: #fff; border-radius: 50%;
+  width: 20px; height: 20px; font-size: .65rem;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── CATEGORY PILLS ──────────────────────────── */
+.cats-wrap {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 18px;
+  overflow-x: auto; scrollbar-width: none;
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+.cats-wrap::-webkit-scrollbar { display: none; }
+.cat-pill {
+  padding: 10px 20px;
+  background: #f5f5f3; border: 1.5px solid transparent;
+  border-radius: 24px;
+  font-family: inherit; font-size: .95rem; font-weight: 500;
+  color: #888; cursor: pointer; white-space: nowrap;
+  transition: all .15s; flex-shrink: 0;
+}
+.cat-pill.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* ── FILTER PANEL ────────────────────────────── */
+.filter-panel {
+  background: #fff; border-bottom: 1px solid #e8e8e8;
+  padding: 16px 18px; flex-shrink: 0;
+}
+.filter-section { margin-bottom: 14px; }
+.filter-section:last-child { margin-bottom: 0; }
+.filter-lbl {
+  font-size: .75rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #bbb; margin-bottom: 10px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 16px; border-radius: 20px;
+  font-size: .95rem; font-family: inherit;
+  border: 1.5px solid #e0e0e0; background: #fff;
+  color: #666; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.chip.on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+/* ── SORT BAR ────────────────────────────────── */
+.sort-bar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px; flex-shrink: 0;
+}
+.count { font-size: .9rem; color: #bbb; }
+.sort-sel {
+  border: 1.5px solid #e0e0e0; border-radius: 10px;
+  padding: 9px 14px; font-size: .95rem; font-family: inherit;
+  background: #fff; color: #555; outline: none; cursor: pointer;
+}
+
+/* ── FEED ────────────────────────────────────── */
+.feed { padding: 0 14px 40px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── RECIPE CARD ─────────────────────────────── */
+.rcard {
+  background: #fff;
+  border-radius: 18px;
+  border: 1.5px solid #ebebeb;
+  overflow: hidden;
+}
+
+.rcard-top { display: flex; align-items: stretch; min-height: 110px; }
+
+.rcard-emoji {
+  width: 100px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3.2rem;
+}
+
+.rcard-info { flex: 1; min-width: 0; padding: 16px 18px 16px 14px; }
+
+.rcard-cat {
+  font-size: .72rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #bbb; margin-bottom: 6px;
+}
+.rcard-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 8px; margin-bottom: 8px;
+}
+.rcard-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; font-weight: 700;
+  line-height: 1.3; color: #1a1a1a; flex: 1;
+}
+.rcard-by {
+  font-size: .8rem; color: #bbb;
+  white-space: nowrap; padding-top: 4px; flex-shrink: 0;
+}
+.rcard-desc { font-size: .95rem; color: #888; line-height: 1.55; }
+
+/* Notes */
+.rcard-notes {
+  margin: 10px 14px 0;
+  padding: 13px 16px;
+  background: #fafaf9;
+  border-left: 3px solid #1a1a1a;
+  border-radius: 0 10px 10px 0;
+  border: 1px solid #f0f0ee;
+  border-left: 3px solid #1a1a1a;
+}
+.rcard-notes-lbl {
+  font-size: .72rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #bbb; margin-bottom: 5px;
+}
+.rcard-notes-txt {
+  font-size: .95rem; line-height: 1.6;
+  color: #555; font-style: italic;
+}
+
+/* Tags */
+.rcard-tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 0; }
+.rcard-tag {
+  font-size: .8rem; padding: 5px 12px;
+  border-radius: 20px; background: #f0f0ee; color: #777;
+}
+
+/* Footer */
+.rcard-footer {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 16px; margin-top: 12px;
+  border-top: 1px solid #f0f0ee; gap: 8px;
+}
+.rcard-actions-left { display: flex; align-items: center; gap: 4px; }
+.rcard-actions-right { display: flex; align-items: center; }
+
+.react-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; color: #bbb;
+  padding: 9px 12px; border-radius: 10px;
+  font-family: inherit;
+}
+.react-btn.on { color: #e44; }
+
+.share-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 9px 10px; border-radius: 10px; color: #bbb;
+  display: flex; align-items: center;
+}
+
+.view-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 10px 18px;
+  background: #1a1a1a; color: #fff;
+  border: none; border-radius: 12px;
+  font-family: inherit; font-size: .95rem; font-weight: 600;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+
+/* ── OVERLAY ─────────────────────────────────── */
+.overlay {
+  position: absolute; top: 0; left: 0; right: 0; min-height: 100%;
+  background: rgba(0,0,0,.55); z-index: 200;
+  display: flex; justify-content: center;
+  align-items: flex-start; padding: 40px 16px 80px;
+  overflow-y: auto;
+}
+
+/* ── FORM ────────────────────────────────────── */
+.form-box {
+  background: #fff; border-radius: 22px;
+  width: 100%; max-width: 540px;
+  max-height: 80vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 80px rgba(0,0,0,.2);
+}
+.form-hdr {
+  padding: 22px 24px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #f0f0ee;
+  flex-shrink: 0;
+}
+.form-ttl {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700;
+}
+.form-cls {
+  background: #f5f5f3; border: none; cursor: pointer;
+  font-size: 1rem; color: #888;
+  padding: 8px 12px; border-radius: 8px;
+}
+.form-bdy { padding: 20px 24px 36px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-size: .9rem; font-weight: 600;
+  margin-bottom: 8px; color: #333;
+}
+.field-hint { font-size: .82rem; color: #bbb; margin-top: 5px; }
+.field input, .field textarea, .field select {
+  width: 100%; padding: 14px 16px;
+  border: 1.5px solid #e8e8e8; border-radius: 12px;
+  font-size: 1rem; font-family: inherit;
+  background: #fafaf9; outline: none;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: #1a1a1a; background: #fff;
+}
+.field textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+.sub-btn {
+  width: 100%; padding: 16px; margin-top: 8px;
+  border: none; border-radius: 14px;
+  font-size: 1.05rem; font-family: inherit; font-weight: 600;
+  cursor: pointer;
+}
+.sub-btn.on { background: #1a1a1a; color: #fff; }
+.sub-btn.off { background: #ebebeb; color: #bbb; cursor: not-allowed; }
+.success-msg { text-align: center; padding: 40px 0; }
+
+/* ── EMPTY / LOADING ─────────────────────────── */
+.empty { text-align: center; padding: 60px 20px; color: #bbb; }
+.loading { text-align: center; padding: 60px 20px; color: #bbb; font-size: 1rem; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-row1">
+      <div class="logo">dish <em>&amp; share</em></div>
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-input" id="searchInput" placeholder="Search recipes or neighbors…" oninput="render()"/>
+      </div>
+      <button class="add-btn" onclick="openForm()">+ Add</button>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn" id="filterToggle" onclick="toggleFilters()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filter
+        <span class="filter-badge" id="fBadge" style="display:none">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY PILLS -->
+  <div class="cats-wrap" id="catsRow"></div>
+
+  <!-- FILTER PANEL -->
+  <div class="filter-panel" id="filterPanel" style="display:none">
+    <div class="filter-section">
+      <div class="filter-lbl">Dietary</div>
+      <div class="chips" id="dietChips"></div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-lbl">Great For</div>
+      <div class="chips" id="gforChips"></div>
+    </div>
+  </div>
+
+  <!-- SORT BAR -->
+  <div class="sort-bar">
+    <span class="count" id="countLbl"></span>
+    <select class="sort-sel" onchange="activeSort=this.value;render()">
+      <option value="newest">Newest</option>
+      <option value="popular">Most Loved</option>
+      <option value="az">A → Z</option>
+      <option value="contributor">By Neighbor</option>
+    </select>
+  </div>
+
+  <!-- FEED -->
+  <div class="page">
+    <div class="feed" id="feed">
+      <div class="loading">Loading recipes…</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="formWrap" style="display:none"></div>
+
+<script>
+var CATS    = ["All","Breakfast","Lunch","Dinner","Dessert","Snacks","Drinks","Sides"];
+var DIETARY = ["Gluten-Free","Vegan","Vegetarian","Dairy-Free","Nut-Free","Low-Carb"];
+var GFOR    = ["Potluck","Weeknight","Kids","Date Night","Meal Prep","Brunch","Holiday"];
+var CAT_BG  = {Breakfast:"#fef3c7",Lunch:"#dcfce7",Dinner:"#fce7f3",Dessert:"#ede9fe",Snacks:"#fef9c3",Drinks:"#e0f2fe",Sides:"#f0fdf4"};
+var CAT_EMO = {Breakfast:"🥞",Lunch:"🥗",Dinner:"🍗",Dessert:"🍰",Snacks:"🧀",Drinks:"🍹",Sides:"🥦"};
+var KW=[
+  [/taco|burrito|quesadilla|enchilada|fajita/i,"🌮"],[/pizza/i,"🍕"],
+  [/pasta|noodle|spaghetti|ramen|pho/i,"🍝"],[/soup|chowder|chili|stew/i,"🍲"],
+  [/sandwich|wrap|sub/i,"🥪"],[/salad/i,"🥗"],[/curry/i,"🍛"],[/rice|risotto/i,"🍚"],
+  [/bread|focaccia|loaf/i,"🍞"],[/pancake|waffle/i,"🥞"],
+  [/cake|cupcake/i,"🎂"],[/cookie|brownie|blondie/i,"🍪"],[/pie|tart/i,"🥧"],
+  [/ice cream|gelato/i,"🍦"],[/chocolate/i,"🍫"],[/donut/i,"🍩"],
+  [/chicken|poultry/i,"🍗"],[/beef|steak|burger/i,"🥩"],[/pork|bacon|ham/i,"🥓"],
+  [/fish|salmon|tuna|shrimp|seafood/i,"🐟"],[/turkey/i,"🦃"],[/egg|frittata/i,"🥚"],
+  [/avocado/i,"🥑"],[/mango/i,"🥭"],[/mushroom/i,"🍄"],
+  [/smoothie/i,"🥤"],[/coffee|latte/i,"☕"],[/tea/i,"🍵"],[/lassi/i,"🥛"],
+  [/cocktail|margarita/i,"🍹"],[/dip|hummus|guacamole/i,"🫙"],
+  [/cheese/i,"🧀"],[/bagel/i,"🥯"],[/pork|carnitas|pulled/i,"🥓"],
+  [/shredded|slow cooker|instant pot|instantpot/i,"🫕"]
+];
+function getEmoji(r){for(var i=0;i<KW.length;i++)if(KW[i][0].test(r.name))return KW[i][1];return CAT_EMO[r.category]||"🍽️";}
+function getBg(r){return CAT_BG[r.category]||"#f0f0ee";}
+
+var recipes=[], reactions={}, reacted={};
+var activeCat="All", activeSort="newest", filtersOpen=false;
+var dietary=[], gfor=[];
+
+var SAMPLE=[
+  {id:"1",name:"Lemon Ricotta Pancakes",contributor:"Frances",category:"Breakfast",description:"Fluffy, bright, dangerously good on a Sunday morning.",notes:"Use full-fat ricotta only. Don't over-mix — lumps are your friend.",link:"",dietary:["Vegetarian"],greatFor:["Brunch","Kids"],reactions:12},
+  {id:"2",name:"Spicy Tahini Noodles",contributor:"Jess",category:"Dinner",description:"15 minutes, one bowl, everyone obsessed.",notes:"Double the chili crisp. Add a soft-boiled egg on top.",link:"",dietary:["Vegan"],greatFor:["Weeknight","Meal Prep"],reactions:8},
+  {id:"3",name:"Brown Butter Blondies",contributor:"Mia",category:"Dessert",description:"The secret is the extra salt. Always the extra salt.",notes:"Go a little past golden on the butter — that's where the flavor lives.",link:"",dietary:[],greatFor:["Potluck","Holiday"],reactions:21},
+  {id:"4",name:"Mango Lassi",contributor:"Priya",category:"Drinks",description:"Grandma's recipe. Nothing compares.",notes:"Alphonso mangoes if you can find them. Freeze overnight.",link:"",dietary:["Vegetarian","Gluten-Free"],greatFor:["Brunch","Kids"],reactions:5},
+  {id:"5",name:"Sheet Pan Harissa Chicken",contributor:"Dana",category:"Dinner",description:"Dump it in, roast it, done. Weeknight hero.",notes:"Marinate overnight. Serve with yogurt and lemon.",link:"",dietary:["Gluten-Free","Dairy-Free"],greatFor:["Weeknight","Meal Prep"],reactions:17},
+  {id:"6",name:"Everything Bagel Dip",contributor:"Frances",category:"Snacks",description:"Cream cheese + seasoning + vibes.",notes:"Add smoked salmon on top if you want to be a hero.",link:"",dietary:["Vegetarian"],greatFor:["Potluck","Brunch"],reactions:9}
+];
+
+function init(){
+  buildCats();buildChips();
+  if(typeof google!=="undefined"&&google.script){
+    google.script.run.withSuccessHandler(onData).withFailureHandler(function(){recipes=SAMPLE;render();}).getRecipes();
+  } else {recipes=SAMPLE;render();}
+}
+
+function onData(rows){
+  if(!rows||rows.length<2){recipes=SAMPLE;render();return;}
+  recipes=rows.slice(1).map(function(r,i){
+    return{id:String(r[0]||i+1),name:String(r[1]||""),contributor:String(r[2]||""),
+      category:String(r[3]||"Dinner"),description:String(r[4]||""),notes:String(r[5]||""),
+      link:String(r[6]||""),dietary:r[8]?String(r[8]).split("|").filter(Boolean):[],
+      greatFor:r[9]?String(r[9]).split("|").filter(Boolean):[],reactions:parseInt(r[10])||0};
+  }).filter(function(r){return r.name;});
+  render();
+}
+
+function buildCats(){
+  document.getElementById("catsRow").innerHTML=CATS.map(function(c){
+    return'<button class="cat-pill'+(c===activeCat?' active':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>';
+  }).join('');
+}
+function setCat(c){activeCat=c;buildCats();render();}
+
+function buildChips(){
+  document.getElementById("dietChips").innerHTML=DIETARY.map(function(d){
+    return'<button class="chip'+(dietary.indexOf(d)>=0?' on':'')+'" onclick="toggleD(\''+d+'\')">'+d+'</button>';
+  }).join('');
+  document.getElementById("gforChips").innerHTML=GFOR.map(function(g){
+    return'<button class="chip'+(gfor.indexOf(g)>=0?' on':'')+'" onclick="toggleG(\''+g+'\')">'+g+'</button>';
+  }).join('');
+  var n=dietary.length+gfor.length;
+  var b=document.getElementById("fBadge");b.style.display=n?"flex":"none";b.textContent=n;
+  var fb=document.getElementById("filterToggle");
+  if(fb)fb.className="filter-btn"+(n>0?" active":"");
+}
+function toggleD(d){dietary=dietary.indexOf(d)>=0?dietary.filter(function(x){return x!==d;}):dietary.concat([d]);buildChips();render();}
+function toggleG(g){gfor=gfor.indexOf(g)>=0?gfor.filter(function(x){return x!==g;}):gfor.concat([g]);buildChips();render();}
+function toggleFilters(){filtersOpen=!filtersOpen;document.getElementById("filterPanel").style.display=filtersOpen?"block":"none";}
+
+function getFiltered(){
+  var q=(document.getElementById("searchInput").value||"").toLowerCase();
+  return recipes.filter(function(r){
+    if(q&&![r.name,r.contributor,r.description].some(function(s){return(s||"").toLowerCase().indexOf(q)>=0;}))return false;
+    if(activeCat!=="All"&&r.category!==activeCat)return false;
+    if(dietary.length&&!dietary.every(function(d){return r.dietary&&r.dietary.indexOf(d)>=0;}))return false;
+    if(gfor.length&&!gfor.every(function(g){return r.greatFor&&r.greatFor.indexOf(g)>=0;}))return false;
+    return true;
+  }).sort(function(a,b){
+    var rA=(a.reactions||0)+(reactions[a.id]||0),rB=(b.reactions||0)+(reactions[b.id]||0);
+    if(activeSort==="popular")return rB-rA;
+    if(activeSort==="az")return a.name.localeCompare(b.name);
+    if(activeSort==="contributor")return a.contributor.localeCompare(b.contributor);
+    return b.id-a.id;
+  });
+}
+
+function render(){
+  var f=getFiltered();
+  document.getElementById("countLbl").textContent=f.length+" recipe"+(f.length!==1?"s":"");
+  var feed=document.getElementById("feed");
+  if(!f.length){feed.innerHTML='<div class="empty"><div style="font-size:2.8rem;margin-bottom:14px">🍽️</div>No recipes yet — be the first to add one!</div>';return;}
+  feed.innerHTML=f.map(renderCard).join('');
+}
+
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function renderCard(r){
+  var isR=!!reacted[r.id];
+  var total=(r.reactions||0)+(reactions[r.id]||0);
+  var tags=(r.dietary||[]).concat(r.greatFor||[]);
+  return'<div class="rcard">'+
+
+    '<div class="rcard-top">'+
+      '<div class="rcard-emoji" style="background:'+getBg(r)+'">'+getEmoji(r)+'</div>'+
+      '<div class="rcard-info">'+
+        '<div class="rcard-cat">'+esc(r.category)+'</div>'+
+        '<div class="rcard-header">'+
+          '<div class="rcard-name">'+esc(r.name)+'</div>'+
+          '<div class="rcard-by">'+esc(r.contributor)+'</div>'+
+        '</div>'+
+        '<div class="rcard-desc">'+esc(r.description)+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    (r.notes?
+      '<div class="rcard-notes" style="margin-top:10px">'+
+        '<div class="rcard-notes-lbl">Notes from '+esc(r.contributor)+'</div>'+
+        '<div class="rcard-notes-txt">'+esc(r.notes)+'</div>'+
+      '</div>'
+    :'')+
+
+    (tags.length?
+      '<div class="rcard-tags">'+
+        tags.map(function(t){return'<span class="rcard-tag">'+esc(t)+'</span>';}).join('')+
+      '</div>'
+    :'')+
+
+    '<div class="rcard-footer">'+
+      '<div class="rcard-actions-left">'+
+        '<button class="react-btn'+(isR?' on':'')+'" onclick="doReact(\''+r.id+'\')">'+
+          (isR?'❤️':'🤍')+' '+(total>0?total:'Made this')+
+        '</button>'+
+        '<button class="share-btn" onclick="doShare(\''+r.id+'\')" title="Share">'+
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>'+
+        '</button>'+
+      '</div>'+
+      '<div class="rcard-actions-right">'+
+        (r.link?'<a class="view-btn" href="'+esc(r.link)+'" target="_blank">View Recipe ↗</a>':'')+
+      '</div>'+
+    '</div>'+
+
+  '</div>';
+}
+
+function doReact(id){
+  if(reacted[id])return;
+  reacted[id]=true;reactions[id]=(reactions[id]||0)+1;render();
+  if(typeof google!=="undefined"&&google.script)google.script.run.addReaction(id);
+}
+
+function doShare(id){
+  var r=recipes.find(function(x){return x.id===id;});if(!r)return;
+  var txt=r.name+" by "+r.contributor+"\n"+r.description+(r.link?"\n"+r.link:"");
+  if(navigator.share)navigator.share({title:r.name,text:txt});
+  else{navigator.clipboard.writeText(txt);alert("Copied!");}
+}
+
+var fs={},formDone=false;
+
+function openForm(){
+  fs={name:"",contributor:"",category:"Dinner",description:"",notes:"",link:"",dietary:[],greatFor:[]};
+  formDone=false;renderForm();
+  document.getElementById("formWrap").style.display="block";
+}
+function closeForm(){
+  document.getElementById("formWrap").style.display="none";
+  document.getElementById("formWrap").innerHTML="";
+}
+
+function renderForm(){
+  var wrap=document.getElementById("formWrap");
+  if(formDone){
+    wrap.innerHTML='<div class="overlay" onclick="closeForm()">'+
+      '<div class="form-box" onclick="event.stopPropagation()">'+
+        '<div class="success-msg">'+
+          '<div style="font-size:3rem;margin-bottom:12px">🎉</div>'+
+          '<div style="font-size:1.1rem;font-weight:600;color:#1a1a1a;margin-bottom:6px">Recipe added!</div>'+
+          '<div style="font-size:.9rem;color:#888">Thanks for sharing with the neighborhood.</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+    return;
+  }
+  var can=fs.link;
+  wrap.innerHTML='<div class="overlay" onclick="closeForm()">'+
+    '<div class="form-box" onclick="event.stopPropagation()">'+
+      '<div class="form-hdr">'+
+        '<div class="form-ttl">Share a Recipe</div>'+
+        '<button class="form-cls" onclick="closeForm()">✕</button>'+
+      '</div>'+
+      '<div class="form-bdy">'+
+        '<div class="field"><label>Recipe Link *</label><input id="fLink" type="url" placeholder="https://… — paste the recipe URL"/><div class="field-hint">Required. Everything else is optional.</div></div>'+
+        '<div class="field"><label>Recipe Name <span style="font-weight:400;color:#bbb">— optional</span></label><input id="fName" placeholder="e.g. Brown Butter Blondies"/></div>'+
+        '<div class="field"><label>Your Name <span style="font-weight:400;color:#bbb">— optional</span></label><input id="fContrib" placeholder="e.g. Frances"/></div>'+
+        '<div class="field"><label>Category</label><select id="fCat">'+
+          CATS.filter(function(c){return c!=="All";}).map(function(c){return'<option'+(c===fs.category?' selected':'')+'>'+c+'</option>';}).join('')+
+        '</select></div>'+
+        '<div class="field"><label>Description <span style="font-weight:400;color:#bbb">— optional</span></label><textarea id="fDesc" placeholder="What makes this special?"></textarea></div>'+
+        '<div class="field"><label>Your Notes <span style="font-weight:400;color:#bbb">— optional</span></label>'+
+          '<textarea id="fNotes" placeholder="Tips, the secret ingredient, what makes it actually good…"></textarea>'+
+          '<div class="field-hint">Shows as your personal note on the card.</div>'+
+        '</div>'+
+        '<div class="field"><label>Dietary</label><div class="chips">'+
+          DIETARY.map(function(d){return'<button type="button" class="chip'+(fs.dietary.indexOf(d)>=0?' on':'')+'" onclick="toggleFD(\''+d+'\')">'+d+'</button>';}).join('')+
+        '</div></div>'+
+        '<div class="field"><label>Great For</label><div class="chips">'+
+          GFOR.map(function(g){return'<button type="button" class="chip'+(fs.greatFor.indexOf(g)>=0?' on':'')+'" onclick="toggleFG(\''+g+'\')">'+g+'</button>';}).join('')+
+        '</div></div>'+
+        '<button id="subBtn" class="sub-btn '+(can?'on':'off')+'" onclick="submitForm()" '+(can?'':'disabled')+'>Add Recipe →</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+
+  document.getElementById("fLink").value=fs.link||"";
+  document.getElementById("fName").value=fs.name||"";
+  document.getElementById("fContrib").value=fs.contributor||"";
+  document.getElementById("fDesc").value=fs.description||"";
+  document.getElementById("fNotes").value=fs.notes||"";
+
+  document.getElementById("fLink").addEventListener("input",function(){fs.link=this.value;refreshSub();});
+  document.getElementById("fName").addEventListener("input",function(){fs.name=this.value;});
+  document.getElementById("fContrib").addEventListener("input",function(){fs.contributor=this.value;});
+  document.getElementById("fCat").addEventListener("change",function(){fs.category=this.value;});
+  document.getElementById("fDesc").addEventListener("input",function(){fs.description=this.value;});
+  document.getElementById("fNotes").addEventListener("input",function(){fs.notes=this.value;});
+}
+
+function refreshSub(){
+  var can=fs.link;
+  var btn=document.getElementById("subBtn");
+  if(btn){btn.className="sub-btn "+(can?"on":"off");btn.disabled=!can;}
+}
+function toggleFD(d){fs.dietary=fs.dietary.indexOf(d)>=0?fs.dietary.filter(function(x){return x!==d;}):fs.dietary.concat([d]);renderForm();}
+function toggleFG(g){fs.greatFor=fs.greatFor.indexOf(g)>=0?fs.greatFor.filter(function(x){return x!==g;}):fs.greatFor.concat([g]);renderForm();}
+
+function submitForm(){
+  if(!fs.link)return;
+  var btn=document.getElementById("subBtn");
+  if(btn){btn.textContent="Adding…";btn.disabled=true;}
+  var payload={name:fs.name||fs.link,contributor:fs.contributor||"Anonymous",
+    category:fs.category||"Dinner",description:fs.description||"",
+    notes:fs.notes||"",link:fs.link||"",image:"",
+    dietary:fs.dietary.join("|"),greatFor:fs.greatFor.join("|")};
+  recipes.unshift({id:String(Date.now()),reactions:0,image:"",
+    name:payload.name,contributor:payload.contributor,category:payload.category,
+    description:payload.description,notes:payload.notes,link:payload.link,
+    dietary:fs.dietary.slice(),greatFor:fs.greatFor.slice()});
+  formDone=true;renderForm();render();
+  setTimeout(closeForm,1800);
+  if(typeof google!=="undefined"&&google.script)google.script.run.addRecipe(payload);
+}
+
+init();
+</script>
+</body>
+</html>
